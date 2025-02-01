@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>六合彩模拟游戏</title>
+    <style>
+        body {
+            text-align: center;
+            background-color: #222;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: space-between;
+        }
+        .container {
+            width: 30%;
+            padding: 10px;
+        }
+        .main {
+            width: 40%;
+        }
+        h1 { color: #FFD700; }
+        .bet-container, .result-container {
+            padding: 15px;
+            background: #333;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        .input-field {
+            margin: 5px;
+        }
+        button {
+            background-color: #ff5733;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .special-number {
+            color: red;
+            font-weight: bold;
+            font-size: 20px;
+        }
+        #gameOver { display: none; font-size: 24px; color: red; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>中奖概率与赔率</h2>
+        <p>🎯 选中号码 (6个正码): 1/8.17 | 赔率 2倍</p >
+        <p>🎯 选中特码 (1个特码): 1/49 | 赔率 35倍</p >
+        <p>🎯 生肖中奖: 1/12 | 赔率 10倍</p >
+    </div>
+
+    <div class="main">
+        <h1>六合彩模拟游戏</h1>
+        <p>您的积分：<span id="balance">10000</span></p >
+
+        <div class="bet-container">
+            <h2>押注</h2>
+            <label>选择号码 (可多选)：</label>
+            <br>
+            <input type="text" id="betNumbers" placeholder="例如: 3,15,28" class="input-field">
+            <br>
+            <label>数字下注金额：</label>
+            <input type="number" id="betAmountNumbers" min="1" class="input-field">
+            <br>
+            
+            <label>选择生肖 (可多选)：</label>
+            <br>
+            <input type="text" id="betZodiacs" placeholder="例如: 鼠,虎,龙" class="input-field">
+            <br>
+            <label>生肖下注金额：</label>
+            <input type="number" id="betAmountZodiacs" min="1" class="input-field">
+            <br>
+            
+            <button onclick="placeBet()">确认押注</button>
+        </div>
+
+        <div class="result-container">
+            <h2>开奖</h2>
+            <p>倒计时：<span id="timer">30</span> 秒</p >
+            <p>开奖号码：<span id="winningNumbers">等待开奖...</span></p >
+            <p>中奖生肖：<span id="winningZodiac">等待开奖...</span></p >
+            <p>您的中奖情况：<span id="resultMessage">---</span></p >
+            <p>🎉 最大可中奖金额：<span id="maxWinning">0</span></p >
+        </div>
+
+        <h2 id="gameOver">GAME OVER</h2>
+    </div>
+
+    <div class="container">
+        <h2>投注信息</h2>
+        <p>号码押注：<span id="betNumbersList">---</span></p >
+        <p>生肖押注：<span id="betZodiacsList">---</span></p >
+        <p>总下注金额：<span id="totalBetAmount">0</span></p >
+    </div>
+
+   <script>
+    let balance = 10000;
+    let bets = [];
+    let countdown = 30;
+    let interval;
+    let zodiacMap = ["鼠", "牛", "虎", "兔", "龙", "蛇", "马", "羊", "猴", "鸡", "狗", "猪"];
+
+
+function placeBet() {
+    let numbers = document.getElementById("betNumbers").value.split(",").map(n => parseInt(n.trim()));
+    let zodiacs = document.getElementById("betZodiacs").value.split(",").map(z => z.trim());
+    let amountNumbers = parseInt(document.getElementById("betAmountNumbers").value);
+    let amountZodiacs = parseInt(document.getElementById("betAmountZodiacs").value);
+    let totalBet = 0; // 统计下注总金额（数字 + 生肖）
+
+
+function startTimer() {
+    clearInterval(interval); // 防止多次计时器叠加
+    countdown = 30; 
+    updateTimerUI(); // 立即更新 UI
+
+    interval = setInterval(() => {
+        countdown--;
+        updateTimerUI(); // 每秒更新 UI
+
+        if (countdown <= 0) {
+            clearInterval(interval);
+            drawNumbers(); // 开奖
+            startTimer();  // 重新开始倒计时
+        }
+    }, 1000);
+}
+
+function updateTimerUI() {
+    let timerElement = document.getElementById("timer");
+    if (timerElement) {
+        timerElement.innerText = countdown; // 确保 UI 显示倒计时
+    }
+}
+
+startTimer();
+
+
+
+    // **处理数字下注**
+    if (!isNaN(amountNumbers) && amountNumbers > 0) {
+        numbers.forEach(num => {
+            if (!isNaN(num) && num >= 1 && num <= 49) {
+                bets.push({ type: "number", value: num, amount: amountNumbers });
+                balance -= amountNumbers;
+                totalBet += amountNumbers; // 加入总投注金额
+            }
+        });
+    }
+
+    // **处理生肖下注**
+    if (!isNaN(amountZodiacs) && amountZodiacs > 0) {
+        zodiacs.forEach(zodiac => {
+            if (zodiacMap.includes(zodiac)) {
+                bets.push({ type: "zodiac", value: zodiac, amount: amountZodiacs });
+                balance -= amountZodiacs;
+                totalBet += amountZodiacs; // 加入总投注金额
+            }
+        });
+    }
+
+    // **更新UI**
+    document.getElementById("balance").innerText = balance;  // 更新余额
+    document.getElementById("betNumbersList").innerText = numbers.join(", ") || "无";
+    document.getElementById("betZodiacsList").innerText = zodiacs.join(", ") || "无";
+    document.getElementById("totalBetAmount").innerText = totalBet; // 更新UI显示的总下注金额
+
+    calculateMaxWinning();
+    alert("成功押注！");
+}
+
+
+    function drawNumbers() {
+        let winningNumbers = generateWinningNumbers();
+        let winningZodiacs = Array.from({ length: 5 }, () => zodiacMap[Math.floor(Math.random() * 12)]);
+
+        document.getElementById("winningZodiac").innerText = winningZodiacs.join(" | ");
+        let numbersText = winningNumbers.slice(0, 6).join(" ") + 
+            " <span class='special-number'>" + winningNumbers[6] + "</span>";
+        document.getElementById("winningNumbers").innerHTML = numbersText;
+
+        let totalWin = 0;
+        bets.forEach(bet => {
+            if (bet.type === "number" && winningNumbers.includes(bet.value)) {
+                totalWin += (bet.value === winningNumbers[6] ? bet.amount * 35 : bet.amount * 2);
+            }
+            if (bet.type === "zodiac" && winningZodiacs.includes(bet.value)) {
+                totalWin += bet.amount * 10;
+            }
+        });
+
+        balance += totalWin;
+        document.getElementById("balance").innerText = balance;
+        document.getElementById("resultMessage").innerText = totalWin > 0 ? `赢得 ${totalWin} 积分！` : "很遗憾，您未中奖。";
+        bets = [];
+        calculateMaxWinning();
+        if (balance <= 0) {
+            document.getElementById("gameOver").style.display = "block";
+            clearInterval(interval);
+        }
+    }
+
+    function generateWinningNumbers() {
+        let numbers = [];
+        while (numbers.length < 7) {
+            let num = Math.floor(Math.random() * 49) + 1;
+            if (!numbers.includes(num)) numbers.push(num);
+        }
+        return numbers;
+    }
+
+</script>
+</body>
+</html>
